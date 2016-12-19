@@ -1,0 +1,16 @@
+{
+  "name": "crawler-01",
+  "version": "1.0.0",
+  "description": "crawler number one, test for node crawler",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Heaven",
+  "license": "ISC",
+  "dependencies": {
+    "async": "^2.1.4",
+    "cheerio": "^0.22.0",
+    "superagent": "^3.3.0"
+  }
+}
