@@ -1,25 +1,36 @@
 const superagent = require('superagent');
 const cheerio = require('cheerio');
+const EventProxy = require('eventproxy');
 const async = require('async');
 console.log('开始抓取网页...');
-// 知乎个人中心地址
-const profileUrl = 'https://www.zhihu.com/people/yu-xin-96-75/activities';
-const actionsUrl = 'https://www.zhihu.com/api/v4/members/yu-xin-96-75/activities?limit=20&after_id=1482121573&desktop=True';
-const authorization = 'Bearer Mi4wQUlDQ3J5bGNCUXNBWUFKOHQ0X3JDaGNBQUFCaEFsVk5MUGwtV0FEYzQwb3M1eWFVOFVtSGU2NENPcjVkdFZpSWNR|1482124369|c376e2676fa779e747533a5ea8afa27f327c2683'; 
-const cookie = 'd_c0="AGACfLeP6wqPTjk6zoRY9xy0IjgZZx0opqE=|1480386949"; q_c1=f60013e56c084a24b0dd80ae793f7e76|1480386949000|1480386949000; _zap=fa71034a-810c-4829-9393-e27eeeedafdb; _xsrf=cfe19cb2d335d834399975f082005e21; l_cap_id="ODM2MDY5YmI2MmIzNGM2YzkyNDJhZGQ4NDgxYWQwZWM=|1482123957|92e79d6b60974c29e0e963d5ef47275e5bade3be"; cap_id="ZTIwZDRlODBkYzEyNGFmZGExYWEzYjExZWVhMzVmNjk=|1482123957|bb5fafe8f490bd4d2d565787c325d28e725c37e2"; r_cap_id="YjllYzlmYzEzNmRkNGFhNDkxNTM1MDBjOGQ4ODJjZjk=|1482123958|952c436989606c919be25140d4c38f63c7ef5bdb"; login="MWVhZDZhMjhkZDZiNDU3YzhiZWJkNTI1NTdlYjk4YTg=|1482123970|9f06c6fa7213255ad72ada8d6b3bb3615950a5ef"; l_n_c=1; z_c0=Mi4wQUlDQ3J5bGNCUXNBWUFKOHQ0X3JDaGNBQUFCaEFsVk5MUGwtV0FEYzQwb3M1eWFVOFVtSGU2NENPcjVkdFZpSWNR|1482124369|c376e2676fa779e747533a5ea8afa27f327c2683';
+
+const ep = new EventProxy();
 
 const profile = {}; // 用户基本资料
 const actions = []; // 最近动态，取两百条，然后分析
+
+const actionSize = 20;   // 每次请求的数目
+const actionCount = 200; // 需要的数据总数
+// 知乎个人中心地址
+const profileUrl = 'https://www.zhihu.com/people/tiantang/activities';
+// 此接口请求的最大条数为 20
+let firstId = '';
+
+const authorization = ''; 
+const cookie = '';
 
 // 知乎渲染方式为首屏直出（前五条数据），下拉加载时每次请求新数据
 // 先抓取首屏页面，从中筛选出前面几条数据
 superagent
   .get(profileUrl)
   .set('Cookie', cookie)
+  .set('Connection', 'keep-alive')
   .end((err, res) => {
     if (err) {
+      console.log(`profile出错：${err}`);
       return err;
     } else {
+      console.log(res.header);return;
       let $ = cheerio.load(res.text, {decodeEntities: false});
       let $profile = $('#ProfileHeader');
       let $actions = $('#ProfileMain');
@@ -47,24 +58,51 @@ superagent
       })
 
       // 抓取最近的动态，取最近两个月的数据
-      getActionDatas(actionsUrl);
+      getActionDatas(firstId);
     }
   });
 
+ep.on('reachCount', () => {
+  console.log(`数据收集完毕，收集数据为：${actions.length}`);
+})
+
 // 抓取动态，每次20条
-function getActionDatas (url) {
-  console.log('动态抓取中。。。');
+function getActionDatas (afterId = firstId) {
+  let targetUrl = `https://www.zhihu.com/api/v4/members/tiantang/activities?limit=${actionSize}&after_id=${afterId}&desktop=True`;
+  console.log('抓取目标：' + targetUrl);
   superagent
-  .get(url)
+  .get(targetUrl)
   .set('authorization', authorization)
   .end((err, res) => {
     if (err) {
       console.log(err);
-    } else {
-      let actionArr = JSON.parse(res.text).data;
+      return;
+    } 
+    console.log('...................................................');
+    let result = JSON.parse(res.text);
+    let actionArr = result.data;
+    if (actionArr.length) {
       actionArr.forEach((item) => actions.push(item));
-      console.log(actions.length);
+      // 如果有不够 200 条则接着请求
+      if (actions.length < actionCount) {
+        console.log('才' + actions.length + ', 继续');
+        let url = result.paging.next;
+        let after_id = url.match(/after_id=(\d+)/)[1];
+        getActionDatas(after_id);
+      } else {
+        // 只要200条，多余的裁减掉
+        actions.splice(actionCount, actionSize);
+        ep.emit('reachCount');
+      }
+    } else {
+      console.log('没数据了我擦');
+      ep.emit('reachCount');
     }
-  })
+
+  });
 }
 
+// 数据分析
+function dataAnalysis () {
+
+}
