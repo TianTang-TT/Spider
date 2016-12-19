@@ -1,10 +1,10 @@
+const events = require('events');
 const superagent = require('superagent');
 const cheerio = require('cheerio');
-const EventProxy = require('eventproxy');
 const async = require('async');
 console.log('开始抓取网页...');
 
-const ep = new EventProxy();
+const emitter = new events.EventEmitter();
 
 const profile = {}; // 用户基本资料
 const actions = []; // 最近动态，取两百条，然后分析
@@ -14,10 +14,11 @@ const actionCount = 200; // 需要的数据总数
 // 知乎个人中心地址
 const profileUrl = 'https://www.zhihu.com/people/tiantang/activities';
 // 此接口请求的最大条数为 20
-let firstId = '';
-
-const authorization = ''; 
-const cookie = '';
+let firstId = '1480913247';
+// 授权
+const authorization = 'Bearer Mi4wQUFBQUxkZ2pBQUFBWUFKOHQ0X3JDaGNBQUFCaEFsVk43ZjUtV0FBMEdmcFpOUkw1ZGdqUWhyaG5ZdGxQaFFfZkJ3|1482134067|254ef3204fee567418fdd6b589af9e49098c3bc4'; 
+// cookie
+const cookie = 'd_c0="AGACfLeP6wqPTjk6zoRY9xy0IjgZZx0opqE=|1480386949"; q_c1=f60013e56c084a24b0dd80ae793f7e76|1480386949000|1480386949000; _zap=fa71034a-810c-4829-9393-e27eeeedafdb; l_n_c=1; l_cap_id="YWQzZTZjZGNhMzdhNGMyOWEwNWIyNThiNzNhNDExOGU=|1482125800|a5dc320e48f7317556467514026b463a612637cc"; cap_id="M2JkYmJlZGYyMzMzNGVhNDlhYTA5Y2QyMjNkNzc2MDc=|1482125800|e22b175bbf0eff6584eff1e3de9d24c7d5737f97"; r_cap_id="Njk4ZDNiNTgwYmM5NDE0ZjhmNDZiY2JmZDBmYWEzNmI=|1482125801|007eac3bebaf78f769c9ec5d01d237b9bae371bf"; login="MTNmNGNjZWJiMzg2NGFiMGE0NzlhYjBiMTQxYzcxMTI=|1482125805|a53b51b9868202563e9f0745180de4bae0d9b817"; z_c0=Mi4wQUFBQUxkZ2pBQUFBWUFKOHQ0X3JDaGNBQUFCaEFsVk43ZjUtV0FBMEdmcFpOUkw1ZGdqUWhyaG5ZdGxQaFFfZkJ3|1482134067|254ef3204fee567418fdd6b589af9e49098c3bc4';
 
 // 知乎渲染方式为首屏直出（前五条数据），下拉加载时每次请求新数据
 // 先抓取首屏页面，从中筛选出前面几条数据
@@ -30,7 +31,6 @@ superagent
       console.log(`profile出错：${err}`);
       return err;
     } else {
-      console.log(res.header);return;
       let $ = cheerio.load(res.text, {decodeEntities: false});
       let $profile = $('#ProfileHeader');
       let $actions = $('#ProfileMain');
@@ -62,8 +62,8 @@ superagent
     }
   });
 
-ep.on('reachCount', () => {
-  console.log(`数据收集完毕，收集数据为：${actions.length}`);
+emitter.on('reachCount', () => {
+  console.log(`数据收集完毕，数据总数为：${actions.length}`);
 })
 
 // 抓取动态，每次20条
@@ -92,11 +92,11 @@ function getActionDatas (afterId = firstId) {
       } else {
         // 只要200条，多余的裁减掉
         actions.splice(actionCount, actionSize);
-        ep.emit('reachCount');
+        emitter.emit('reachCount');
       }
     } else {
       console.log('没数据了我擦');
-      ep.emit('reachCount');
+      emitter.emit('reachCount');
     }
 
   });
