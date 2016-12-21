@@ -1,10 +1,6 @@
-const events = require('events');
 const superagent = require('superagent');
 const cheerio = require('cheerio');
 const async = require('async');
-console.log('开始抓取网页...');
-
-const emitter = new events.EventEmitter();
 
 const profile = {}; // 用户基本资料
 const actions = []; // 最近动态，取两百条，然后分析
@@ -12,17 +8,20 @@ const actions = []; // 最近动态，取两百条，然后分析
 const actionSize = 20;   // 每次请求的数目
 const actionCount = 200; // 需要的数据总数
 // 知乎个人中心地址
-const profileUrl = '';
+const profileUrl = 'https://www.zhihu.com/people/yu-xin/activities';
 // 此接口请求的最大条数为 20
-let firstId = '';
+
 // 授权
 const authorization = ''; 
 // cookie
 const cookie = '';
 
+let firstId = '';
+
 // 知乎渲染方式为首屏直出（前五条数据），下拉加载时每次请求新数据
 // 先抓取首屏页面，从中筛选出前面几条数据
-superagent
+const getProfile = (callback) => {
+  superagent
   .get(profileUrl)
   .set('Cookie', cookie)
   .set('Connection', 'keep-alive')
@@ -40,7 +39,7 @@ superagent
       let headline = $profile.find('span.ProfileHeader-headline').text();
       let field = $profile.find('div.ProfileHeader-infoItem').eq(0).text();
       let sex = $profile.find('div.ProfileHeader-infoItem').eq(1)
-                .find('svg').eq(0).hasClass('Icon Icon--male') ? 'M' : 'F';
+                .find('svg').eq(0).hasClass('Icon Icon--male') ? 'Mame' : 'Female';
       
       Object.assign(profile, {
         avatar,
@@ -56,18 +55,15 @@ superagent
       Array.from(firstFiveItems).forEach((item, index) => {
         // TODO 先放着吧，写不动了，这里有点复杂
       })
-
-      // 抓取最近的动态，取最近两个月的数据
-      getActionDatas(firstId);
+      callback(profile);      
     }
   });
-
-emitter.on('reachCount', () => {
-  console.log(`数据收集完毕，数据总数为：${actions.length}`);
-})
+}
 
 // 抓取动态，每次20条
-function getActionDatas (afterId = firstId) {
+const getActions = (callback) => {
+  fetchAction();
+  function fetchAction (afterId = firstId) {
   let targetUrl = `https://www.zhihu.com/api/v4/members/tiantang/activities?limit=${actionSize}&after_id=${afterId}&desktop=True`;
   console.log('抓取目标：' + targetUrl);
   superagent
@@ -88,21 +84,21 @@ function getActionDatas (afterId = firstId) {
         console.log('才' + actions.length + ', 继续');
         let url = result.paging.next;
         let after_id = url.match(/after_id=(\d+)/)[1];
-        getActionDatas(after_id);
+        fetchAction(after_id);
       } else {
         // 只要200条，多余的裁减掉
+        console.log('数据收集完毕，多余的干掉');
         actions.splice(actionCount, actionSize);
-        emitter.emit('reachCount');
-      }
+        callback(actions);
+      }     
     } else {
       console.log('没数据了我擦');
-      emitter.emit('reachCount');
+      callback(actions);
     }
-
   });
-}
-
-// 数据分析
-function dataAnalysis () {
+  }
   
 }
+
+exports.getProfile = getProfile;
+exports.getActions = getActions;

@@ -11,6 +11,8 @@
   "dependencies": {
     "async": "^2.1.4",
     "cheerio": "^0.22.0",
+    "express": "^4.14.0",
+    "jade": "^1.11.0",
     "superagent": "^3.3.0"
   }
 }

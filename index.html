@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>爬虫测试</title>
+</head>
+<body>
+<h1>Spider for zhihu</h1>
+<div id="profile"></div>
+<div id="actions"></div>
+<script type="text/javascript">
+   fetch('/profile').then(res => {
+    res.text().then(resText => {
+      document.querySelector('#profile').innerHTML = resText;
+      fetch('/actions').then(res => {
+        res.text().then(resText => document.querySelector('#actions').innerHTML = resText)
+      })
+    });  
+  })
+
+</script>
+</body>
+</html>

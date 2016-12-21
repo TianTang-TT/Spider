@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>爬虫测试</title>
+</head>
+<body>
+<h1>hello world!</h1>
+<div id="content"></div>
+<script type="text/javascript">
+  let profile = fetch('/profile');
+  profile.then(res => {
+    debugger;
+    document.querySelector('#content').append(res);
+  })
+</script>
+</body>
+</html>
