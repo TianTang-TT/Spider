@@ -1,6 +1,5 @@
 const superagent = require('superagent');
 const cheerio = require('cheerio');
-const async = require('async');
 
 const profile = {}; // 用户基本资料
 const actions = []; // 最近动态，取两百条，然后分析
