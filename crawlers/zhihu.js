@@ -14,16 +14,58 @@ const profileUrl = `https://www.zhihu.com/people/${userId}/activities`;
 const firstUrl = `https://www.zhihu.com/api/v4/members/${userId}/activities?include=data%5B%3F(target.type%3Danswer)%5D.target.is_normal%2Csuggest_edit%2Ccontent%2Cvoteup_count%2Ccomment_count%2Ccollapsed_counts%2Creviewing_comments_count%2Ccan_comment%2Cmark_infos%2Ccreated_time%2Cupdated_time%2Crelationship.voting%2Cis_author%2Cis_thanked%2Cis_nothelp%2Cupvoted_followees%3Bdata%5B%3F(target.type%3Danswer)%5D.target.badge%5B%3F(type%3Dbest_answerer)%5D.topics%3Bdata%5B%3F(target.type%3Darticle)%5D.target.column%2Ccontent%2Cvoteup_count%2Ccomment_count%2Ccollapsed_counts%2Creviewing_comments_count%2Ccan_comment%2Ccomment_permission%2Ccreated%2Cupdated%2Cupvoted_followees%2Cvoting%2Cauthor.badge%5B%3F(type%3Dbest_answerer)%5D.topics%3Bdata%5B%3F(target.type%3Dcolumn)%5D.target.title%2Cintro%2Cdescription%2Carticles_count%2Cfollowers%3Bdata%5B%3F(target.type%3Dtopic)%5D.target.introduction%3Bdata%5B%3F(verb%3DMEMBER_COLLECT_ANSWER)%5D.extra_object%3Bdata%5B%3F(verb%3DMEMBER_COLLECT_ARTICLE)%5D.extra_object&limit=20`;
 
 // 授权
-const authorization = 'Bearer Mi4wQUlDQ3J5bGNCUXNBWUFKOHQ0X3JDaGNBQUFCaEFsVk5EZFNDV0FBUFd0d0pseUpMYnRUTW8zTXFfWHB2UWEzNWJ3|1482377186|03bd216e3224470158e93217d56077e47a5092fc'; 
+let authorization = ''; 
 // cookie
-const cookie = 'd_c0="AGACfLeP6wqPTjk6zoRY9xy0IjgZZx0opqE=|1480386949"; q_c1=f60013e56c084a24b0dd80ae793f7e76|1480386949000|1480386949000; _zap=fa71034a-810c-4829-9393-e27eeeedafdb; _xsrf=cfe19cb2d335d834399975f082005e21; l_n_c=1; l_cap_id="M2FjNDllMTQ3M2I2NGU0MWJkZjY5ZDQ1MmU0N2Q3MTI=|1482376701|a233e4b843ccd01d851d70efc238a6b31510706c"; cap_id="NzJhMDNjNDg1NzNkNGZjN2FkYTY4YTI3NjBlYjdkZmI=|1482376701|c23b16f0deb7f9fc8de6af302c141d009e50cb38"; r_cap_id="MzViMTg1Zjc4OGM5NDYzZWFkOTI1Y2UwM2ZmNDE3ZTI=|1482376703|be49b63b3e6b21e371199c3c472d9dddb9ece277"; login="ZTQ2NzA5MmE1MDA1NDgxMmE2NDMwYTFlOTRkNDE5YWI=|1482376754|32a8b6e27e68c5b1f93dfbb6155bba7281cffbc1"; z_c0=Mi4wQUlDQ3J5bGNCUXNBWUFKOHQ0X3JDaGNBQUFCaEFsVk5EZFNDV0FBUFd0d0pseUpMYnRUTW8zTXFfWHB2UWEzNWJ3|1482377186|03bd216e3224470158e93217d56077e47a5092fc';
+let loginCookie = '';
+// 登陆获取cookie和授权
+const authorize = ({email, password, captcha, capId}, callback) => {
+  // 先获取csrf token，然后在发起登陆请求
+  let csrfToken = '';
+  superagent
+  .get('https://www.zhihu.com')
+  .end((err, res) => {
+    if (err) {
+      console.log('csrf token 获取失败');
+      return err;
+    }
+    let $ = cheerio.load(res.text, {decodeEntities: false});
+    csrfToken = $('input[name="_xsrf"]').val();
+    console.log(`csrf: ${csrfToken}`);
 
+    // 获取token之后发起登陆请求
+    superagent
+    .post('https://www.zhihu.com/login/email')
+    .set('Cookie', capId)
+    .query({_xsrf: csrfToken, email, password, captcha})
+    .end((err, res) => {
+      if (err) {
+        console.log('登陆失败');
+        return err;
+      }
+      let body = res.body;
+      console.log(res);
+      if (body.r == 0) {
+        console.log(`++++++++++++++++++++++++登陆成功++++++++++++++++++++++++++`);
+        // 设置cookie
+        let setCookies = res.headers['set-cookie'];
+        loginCookie = setCookies
+                      .map(cookie => cookie.substring(0, cookie.indexOf(';')))
+                      .join(';');
+        console.log(`cookie: ${loginCookie}`);
+        callback(true);
+      } else {
+        console.log(`++++++++++++++++++++++++登陆失败++++++++++++++++++++++++++`)
+        callback(false);
+      }
+    });
+  });
+}
 // 知乎渲染方式为首屏直出（前五条数据），下拉加载时每次请求新数据
 // 先抓取首屏页面，从中筛选出前面几条数据
 const getProfile = (callback) => {
   superagent
   .get(profileUrl)
-  .set('Cookie', cookie)
+  .set('Cookie', loginCookie)
   .set('Connection', 'keep-alive')
   .end((err, res) => {
     if (err) {
@@ -110,6 +152,6 @@ const getActions = (callback) => {
   });
   } 
 }
-
+exports.authorize = authorize;
 exports.getProfile = getProfile;
 exports.getActions = getActions;

@@ -2,13 +2,76 @@
 <html>
 <head>
   <title>爬虫测试</title>
+  <link rel="stylesheet" type="text/css" href="static/css/index.css">
 </head>
 <body>
 <h1>Spider for zhihu</h1>
-<div id="profile"></div>
-<div id="actions"></div>
+<section id="login">
+  <div id="loginForm">
+    <div class="item">
+      <label for="email">邮箱:</label>
+      <input type="email" id="email" placeholder="请输入知乎注册邮箱">
+    </div>
+    <div class="item">
+      <label for="password">密码:</label>
+      <input type="password" id="password" placeholder="请输入密码">
+    </div>
+    <div class="item">
+      <label for="captcha">验证码：</label>
+      <input type="text" id="captcha" placeholder="请输入验证码">
+      <img class="captcha" src="">
+    </div>
+    <div class="item">
+      <button id="btn-login" type="button">登陆</button>
+    </div>
+    
+  </div>
+</section>  
+
+<section id="profile"></section>
+<section id="actions"></section>
+
 <script type="text/javascript">
-   fetch('/profile').then(res => {
+const captchaImg = document.querySelector('img.captcha');
+const loginBtn = document.querySelector('#btn-login');
+// 点击更换验证码
+captchaImg.addEventListener('click', function() {
+  loadCap();
+})
+// 点击登陆
+loginBtn.addEventListener('click', function (e) {
+  let email = document.querySelector('#email').value;
+  let password = document.querySelector('#password').value;
+  let captcha = document.querySelector('#captcha').value;
+  let loginMsg = `email=${email}&password=${password}&captcha=${captcha}`;
+  fetch('/login?' + loginMsg).then(res => {
+    res.text().then(data => {
+      if (JSON.parse(data).isSuccess) {
+        alert('login success');
+        document.querySelector('#login').style.display = 'none';
+        // 开始抓数据
+        spider();
+      } else {
+        alert('login fail！');
+      }
+      
+    });
+  })
+
+})
+loadCap();
+function loadCap () {
+  fetch('/captcha')
+  .then(res => {    
+    res.text().then(resText => {
+      document.querySelector('img.captcha').src = resText;
+      document.querySelector('#captcha').value = '';
+    }); 
+    
+  });
+}
+function spider () {
+  fetch('/profile').then(res => {
     res.text().then(resText => {
       document.querySelector('#profile').innerHTML = resText;
       fetch('/actions').then(res => {
@@ -16,7 +79,7 @@
       })
     });  
   })
-
+} 
 </script>
 </body>
 </html>

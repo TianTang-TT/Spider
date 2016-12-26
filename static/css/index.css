@@ -1,0 +1,43 @@
+*{
+  margin: 0;
+  padding: 0;
+}
+#login {
+
+}
+#loginForm {
+  margin-top: 50px;
+}
+#loginForm .item {
+  margin: 20px;
+  height: 30px;
+}
+#loginForm .item label {
+  font-size: 20px;
+  color: gray;
+  font-weight: bold;
+  width: 82px;
+  display: inline-block;
+}
+#loginForm .item input {
+    height: 25px;
+    width: 200px;
+    border-radius: 3px;
+    outline: none;
+    border: 1px solid #948e8e;
+}
+#loginForm .item img.captcha{
+  height: 30px;
+  vertical-align: middle;
+}
+#loginForm #btn-login {
+    text-align: center;
+    height: 25px;
+    width: 100px;
+    color: grey;
+    font-size: 16px;
+    border-radius: 3px;
+    border: 1px solid gray;
+    margin-left: 30px;
+    outline: none;
+}
