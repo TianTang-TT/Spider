@@ -30,23 +30,30 @@ const router = (app, req, res) => {
   app.get('/login', (req, res) => {
     let query = url.parse(req.url, true).query;
     console.log('query:' + JSON.stringify(query));
-    spider.authorize(Object.assign(query, {capId: app.get('l_cap_id')}), isSuccess => {
+    spider.login(Object.assign(query, {capId: app.get('l_cap_id')}), isSuccess => {
       res.json({isSuccess})
     })
   })
+  // 获取用户资料
   app.get('/profile', (req, res) => {
     console.log('get profile ..........');
-    spider.getProfile(profile => {
-      app.render('profile', profile, (err, html) => {
-        if (err) {
-          res.send(err);
-          console.log('profile is wrong')
-          return;
-        }
-        res.send(html);
-      })
-    });
+    spider.getUserId(userId => {
+      if (userId) {
+        spider.getProfile(profile => {
+          app.render('profile', profile, (err, html) => {
+            if (err) {
+              res.send(err);
+              console.log('profile is wrong')
+              return;
+            }
+            res.send(html);
+          })
+        });
+      }
+    })
+    
   });
+  // 获取用户动态
   app.get('/actions', (req, res) => {
     console.log('get actions ..........');
     spider.getActions(actions => {
