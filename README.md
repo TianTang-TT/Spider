@@ -1,5 +1,5 @@
 ## node爬虫
-> 模拟登陆，爬取个人知乎动态，抓取两百条信息，统计最近的动态
+> 使用邮箱密码登陆，爬取个人知乎动态，抓取两百条信息，统计最近的动态
 
 ### 使用模块
 
@@ -21,9 +21,18 @@
 3. 打开浏览器，输入`localhost:3000`便可查看效果
 
 ### 目录说明
-[](http://7xt6mo.com1.z0.glb.clouddn.com/1482825152%281%29.jpg);
+![](http://7xt6mo.com1.z0.glb.clouddn.com/1482825152%281%29.jpg)
 
+### 主要步骤
+* 1. 通过邮箱密码验证码登陆获取授权，获取cookie以及authorization
+* 2. 通过请求`zhihu.com`来获取用户id，然后用cheerio抓取出来进行后续的操作
+* 3. 拿到userid之后就可以进行用户基本资料以及最近动态的请求
+
+> 登陆和获取授权的过程有点麻烦，而且有验证码，所以只能通过express来做一个转发。有兴趣的可以直接看github代码，此处不详细讲代码
 
 
 ### demo test 效果
 ![](http://7xt6mo.com1.z0.glb.clouddn.com/L$R01XSEN%7D1TMRZM%28V98~XI.png)
+
+### github地址
+[带登陆功能的知乎爬虫](https://github.com/TianTang-TT/Spider)
